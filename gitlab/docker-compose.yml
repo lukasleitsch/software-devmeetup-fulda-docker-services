@@ -1,0 +1,34 @@
+version: '3'
+services:
+  web:
+    image: 'gitlab/gitlab-ce:latest'
+    restart: unless-stopped
+    hostname: $HOST
+    container_name: gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url = 'https://${HOST}'
+        prometheus_monitoring['enable'] = false
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        nginx['proxy_set_headers'] = {
+          "X-Forwarded-Proto" => "https",
+          "X-Forwarded-Ssl" => "on"
+        }
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+      # nginx proxy
+      VIRTUAL_HOST: $HOST
+      LETSENCRYPT_HOST: $HOST
+      LETSENCRYPT_EMAIL: $EMAIL
+    ports:
+      - '2222:2222'
+    volumes:
+      - './data/gitlab/config:/etc/gitlab'
+      - './data/gitlab/logs:/var/log/gitlab'
+      - './data/gitlab/data:/var/opt/gitlab'
+
+
+networks:
+  default:
+    external:
+      name: nginx-proxy
